@@ -2,9 +2,10 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { AIResponse } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+export const getAIClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
 export const analyzeSketch = async (imageDataBase64: string, prompt: string): Promise<AIResponse> => {
+  const ai = getAIClient();
   const model = 'gemini-3-flash-preview';
   
   const response = await ai.models.generateContent({
@@ -18,14 +19,14 @@ export const analyzeSketch = async (imageDataBase64: string, prompt: string): Pr
           },
         },
         {
-          text: `You are a mystical art mentor from the Nebula Studio. 
-          Analyze this sketch. Provide feedback in a playful, encouraging way.
+          text: `Eres un mentor artístico místico de Nebula Studio. Analiza este boceto. 
+          Feedback en español, lúdico y alentador.
           ${prompt}
-          Return a JSON object with: 
-          - critique: a short poetic critique.
-          - suggestion: what to draw next to make it better.
-          - palette: 4 hex color codes that match the vibe.
-          - backstory: a 2-sentence whimsical story about what is happening in the drawing.`
+          Devuelve un objeto JSON con: 
+          - critique: una crítica poética corta.
+          - suggestion: qué dibujar después para mejorar.
+          - palette: 4 códigos hex de colores que combinen con la vibra.
+          - backstory: una historia fantástica de 2 frases sobre el dibujo.`
         }
       ],
     },
@@ -36,10 +37,7 @@ export const analyzeSketch = async (imageDataBase64: string, prompt: string): Pr
         properties: {
           critique: { type: Type.STRING },
           suggestion: { type: Type.STRING },
-          palette: { 
-            type: Type.ARRAY, 
-            items: { type: Type.STRING } 
-          },
+          palette: { type: Type.ARRAY, items: { type: Type.STRING } },
           backstory: { type: Type.STRING }
         },
         required: ["critique", "suggestion", "palette", "backstory"]
@@ -50,15 +48,30 @@ export const analyzeSketch = async (imageDataBase64: string, prompt: string): Pr
   return JSON.parse(response.text || '{}');
 };
 
-export const generateVision = async (prompt: string): Promise<string> => {
+export const generateProVision = async (prompt: string, baseImage?: string): Promise<string> => {
+  const ai = getAIClient();
+  const contents: any = {
+    parts: [
+      { text: `High-end digital art masterpiece. Style: Cinematic, ethereal, detailed textures. Theme: ${prompt}. Convert the basic sketch into a breathtaking professional illustration.` }
+    ]
+  };
+
+  if (baseImage) {
+    contents.parts.push({
+      inlineData: {
+        mimeType: 'image/png',
+        data: baseImage.split(',')[1]
+      }
+    });
+  }
+
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash-image',
-    contents: {
-      parts: [{ text: `A magical, ethereal painting based on this description: ${prompt}. High quality, cinematic lighting, nebula atmosphere.` }]
-    },
+    model: 'gemini-3-pro-image-preview',
+    contents,
     config: {
       imageConfig: {
-        aspectRatio: "1:1"
+        aspectRatio: "1:1",
+        imageSize: "1K"
       }
     }
   });
