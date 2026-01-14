@@ -1,0 +1,7 @@
+{
+  "name": "NebulaSketch - AI Creative Studio",
+  "description": "An immersive, gamified drawing experience where your sketches come to life with the help of Gemini AI. Featuring cosmic effects, AI-driven critiques, and magical brush tools.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
