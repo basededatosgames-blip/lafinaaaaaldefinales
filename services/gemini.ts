@@ -2,7 +2,12 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { AIResponse } from "../types";
 
-export const getAIClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+// The API key is injected by Vite via the 'define' config
+export const getAIClient = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) throw new Error("API Key not found in environment.");
+  return new GoogleGenAI({ apiKey });
+};
 
 export const analyzeSketch = async (imageDataBase64: string, prompt: string): Promise<AIResponse> => {
   const ai = getAIClient();
@@ -45,14 +50,15 @@ export const analyzeSketch = async (imageDataBase64: string, prompt: string): Pr
     }
   });
 
-  return JSON.parse(response.text || '{}');
+  const jsonStr = response.text || '{}';
+  return JSON.parse(jsonStr.trim());
 };
 
 export const generateProVision = async (prompt: string, baseImage?: string): Promise<string> => {
   const ai = getAIClient();
   const contents: any = {
     parts: [
-      { text: `High-end digital art masterpiece. Style: Cinematic, ethereal, detailed textures. Theme: ${prompt}. Convert the basic sketch into a breathtaking professional illustration.` }
+      { text: `High-end digital art masterpiece. Style: Cinematic, ethereal, cosmic, detailed textures. Theme: ${prompt}. Professional illustration.` }
     ]
   };
 
@@ -77,10 +83,12 @@ export const generateProVision = async (prompt: string, baseImage?: string): Pro
   });
 
   let imageUrl = '';
-  for (const part of response.candidates?.[0]?.content?.parts || []) {
-    if (part.inlineData) {
-      imageUrl = `data:image/png;base64,${part.inlineData.data}`;
-      break;
+  if (response.candidates && response.candidates[0].content.parts) {
+    for (const part of response.candidates[0].content.parts) {
+      if (part.inlineData) {
+        imageUrl = `data:image/png;base64,${part.inlineData.data}`;
+        break;
+      }
     }
   }
   return imageUrl;
